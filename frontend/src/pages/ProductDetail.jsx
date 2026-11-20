@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, Bookmark, ExternalLink, Star, Tag, Edit3, Trash2, MessageCircle } from "@/components/icons";
 import { toast } from "sonner";
-import { api, fileUrl, formatApiErrorDetail } from "../lib/api";
+import { api, fileUrl } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";

@@ -67,10 +67,7 @@ export default function ProductCard({ design, onChange }) {
     <Link
       to={`/design/${design.id}`}
       data-testid={`product-card-${design.id}`}
-      /* break-inside-avoid: предотвращает разрыв карточки колонками Masonry
-         transform-gpu: включает аппаратное ускорение, чтобы карточка не пропадала при анимации
-      */
-      className="group/card block card-hover break-inside-avoid transform-gpu relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 soft-shadow border border-neutral-100 dark:border-neutral-800"
+      className="group/card block card-hover relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 soft-shadow border border-neutral-100 dark:border-neutral-800"
     >
       {/* Единая рамка 4:3: карточки одной высоты независимо от пропорций картинки */}
       <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100 dark:bg-neutral-800">
@@ -84,8 +81,7 @@ export default function ProductCard({ design, onChange }) {
           decoding="async"
           onError={(e) => { e.target.src = PLACEHOLDERS[0]; }}
         />
-        
-        {/* Градиент: pointer-events-none, чтобы мышь проходила сквозь него */}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         <div className="absolute top-2 right-2 flex gap-1.5 z-20">
@@ -103,7 +99,6 @@ export default function ProductCard({ design, onChange }) {
           <button
             onClick={handleLike}
             data-testid={`like-button-${design.id}`}
-            // pointer-events-auto чтобы кнопка работала сквозь невидимый слой
             className="pointer-events-auto flex items-center gap-1 px-2.5 h-8 rounded-full glass-light text-xs font-medium"
           >
             <Heart className={`w-3.5 h-3.5 ${liked ? "fill-red-500 text-red-500" : ""}`} />
@@ -118,7 +113,6 @@ export default function ProductCard({ design, onChange }) {
             Просмотр
           </button>
         </div>
-
       </div>
 
       <div className="p-3">

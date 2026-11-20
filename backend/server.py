@@ -20,22 +20,21 @@ from fastapi import (
     Depends,
     FastAPI,
     File,
-    Form,
     HTTPException,
     Query,
     Request,
     Response,
     UploadFile,
 )
-from fastapi.responses import StreamingResponse
 from gridfs.errors import NoFile
 from PIL import Image, ImageOps
 from starlette.concurrency import run_in_threadpool
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
+from pydantic import BaseModel, EmailStr, Field
 from pymongo.errors import DuplicateKeyError
-from starlette.responses import Response as StarletteResponse  # Тот самый важный импорт!
+from starlette.responses import Response as StarletteResponse
 
+# Префикс путей к файлам в GridFS (не меняется, чтобы старые файлы оставались доступны)
 APP_NAME = "dezi"
 # ---------- Настройка окружения ----------
 ROOT_DIR = Path(__file__).parent
@@ -105,31 +104,11 @@ JWT_ALGORITHM = "HS256"
 def get_jwt_secret() -> str:
     return os.environ["JWT_SECRET"]
 
-import logging
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-
-# Убедитесь, что объект db у вас импортирован или доступен в этом файле
-# from your_database_module import db 
-
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-
+# ---------- Файлы (GridFS) ----------
 async def put_object(path: str, data: bytes, content_type: str) -> dict:
     fs = AsyncIOMotorGridFSBucket(db)
-    # Явно передаем метаданные при создании потока
-    await fs.upload_from_stream(
-        path, 
-        io.BytesIO(data), 
-        metadata={"contentType": content_type} # Убедитесь, что этот ключ совпадает с тем, что вы читаете
-    )
+    await fs.upload_from_stream(path, io.BytesIO(data), metadata={"contentType": content_type})
     return {"path": path, "size": len(data)}
-
-async def get_object(path: str):
-    fs = AsyncIOMotorGridFSBucket(db)
-    # Используем await, так как это асинхронная операция
-    grid_out = await fs.open_download_stream_by_name(path)
-    data = await grid_out.read()
-    content_type = grid_out.metadata.get("contentType", "image/jpeg")
-    return data, content_type
 
 # ---------- Password & JWT ----------
 def hash_password(password: str) -> str:
@@ -159,7 +138,7 @@ def create_refresh_token(user_id: str) -> str:
     }
     return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
-# Исправили куки под требования безопасности современных браузеров (samesite="none", secure=True)
+# Cookie входа: httpOnly (недоступны скриптам), только по HTTPS
 def set_auth_cookies(response: Response, access: str, refresh: str):
     response.set_cookie("access_token", access, httponly=True, secure=True, samesite="none", max_age=43200, path="/")
     response.set_cookie("refresh_token", refresh, httponly=True, secure=True, samesite="none", max_age=1209600, path="/")
@@ -346,7 +325,6 @@ async def serialize_design(d: dict, current_user: Optional[dict] = None) -> dict
         "images": d.get("images", []),
         "status": d.get("status", "pending"),
         "likes_count": d.get("likes_count", 0),
-        "downloads_count": d.get("downloads_count", 0),
         "views_count": d.get("views_count", 0),
         "rating": d.get("rating", 0.0),
         "rating_count": d.get("rating_count", 0),
@@ -612,7 +590,6 @@ async def create_design(body: DesignCreate, user: dict = Depends(get_current_use
         "status": status,
         "author_id": user["id"],
         "likes_count": 0,
-        "downloads_count": 0,
         "views_count": 0,
         "rating": 0.0,
         "rating_count": 0,
@@ -668,7 +645,6 @@ async def list_designs(
         "newest": [("created_at", -1)],
         "rating": [("rating", -1), ("rating_count", -1)],
         "views": [("views_count", -1)],
-        "downloads": [("views_count", -1)],  # старый ключ сортировки
     }
     sort_spec = sort_map.get(sort, sort_map["popular"])
     response.headers["X-Total-Count"] = str(await db.designs.count_documents(query))

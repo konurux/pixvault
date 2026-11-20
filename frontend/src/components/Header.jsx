@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sun, Moon, Plus, Bookmark, Compass, TrendingUp, LayoutGrid, Shield, LogOut, User as UserIcon, Menu, X, Target } from "@/components/icons";
+import { Search, Sun, Moon, Plus, Bookmark, TrendingUp, LayoutGrid, Shield, LogOut, User as UserIcon, Menu, X, Target } from "@/components/icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { Button } from "./ui/button";
